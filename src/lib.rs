@@ -1,4 +1,5 @@
 #![allow(clippy::type_complexity)]
+#![feature(let_chains)]
 
 mod common;
 mod cursor_icon;

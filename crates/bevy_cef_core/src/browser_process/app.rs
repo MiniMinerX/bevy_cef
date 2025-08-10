@@ -10,9 +10,17 @@ use cef_dll_sys::{_cef_app_t, cef_base_ref_counted_t};
 /// ## Reference
 ///
 /// - [`CefApp Class Reference`](https://cef-builds.spotifycdn.com/docs/106.1/classCefApp.html)
-#[derive(Default)]
+//#[derive(Default)]
 pub struct BrowserProcessAppBuilder {
     object: *mut RcImpl<_cef_app_t, Self>,
+}
+
+impl Default for BrowserProcessAppBuilder {
+    fn default() -> Self {
+        Self {
+            object: std::ptr::null_mut(),
+        }
+    }
 }
 
 impl BrowserProcessAppBuilder {

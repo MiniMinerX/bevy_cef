@@ -1,0 +1,8 @@
+[env]
+CEF_ROOT = "D:/Libraries/cef_binary"
+
+[target.'cfg(windows)']
+rustflags = [
+    "-L", "D:/Libraries/cef_binary/Release",
+    "-L", "D:/Libraries/cef_binary/Debug"
+]

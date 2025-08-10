@@ -13,6 +13,8 @@ use cef::{
     MouseButtonType, ProcessId, Range, RequestContext, RequestContextSettings, WindowInfo,
     browser_host_create_browser_sync, process_message_create,
 };
+#[cfg(target_os = "windows")]
+use cef_dll_sys::HWND;
 use cef_dll_sys::{cef_event_flags_t, cef_mouse_button_type_t};
 #[allow(deprecated)]
 use raw_window_handle::RawWindowHandle;
@@ -52,7 +54,7 @@ impl Default for Browsers {
 }
 
 impl Browsers {
-    #[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments)]
     pub fn create_browser(
         &mut self,
         webview: Entity,
@@ -66,21 +68,31 @@ impl Browsers {
     ) {
         let mut context = Self::request_context(requester);
         let size = Rc::new(Cell::new(webview_size));
+        
+        let window_info = WindowInfo {
+            windowless_rendering_enabled: true as _,
+            external_begin_frame_enabled: true as _,
+            #[cfg(target_os = "macos")]
+            parent_view: match _window_handle {
+                Some(RawWindowHandle::AppKit(handle)) => handle.ns_view.as_ptr(),
+                _ => std::ptr::null_mut(),
+            },
+            #[cfg(target_os = "windows")]
+            parent_window: match _window_handle {
+                Some(RawWindowHandle::Win32(handle)) => HWND(handle.hwnd.get() as *mut _),
+                _ => HWND(std::ptr::null_mut()),
+            },
+            #[cfg(target_os = "linux")]
+            parent_window: match _window_handle {
+                Some(RawWindowHandle::Xlib(handle)) => handle.window as _,
+                Some(RawWindowHandle::Wayland(handle)) => handle.surface.as_ptr() as _,
+                _ => 0,
+            },
+            ..Default::default()
+        };
+        
         let browser = browser_host_create_browser_sync(
-            Some(&WindowInfo {
-                windowless_rendering_enabled: true as _,
-                external_begin_frame_enabled: true as _,
-                #[cfg(target_os = "macos")]
-                parent_view: match _window_handle {
-                    Some(RawWindowHandle::AppKit(handle)) => handle.ns_view.as_ptr(),
-                    Some(RawWindowHandle::Win32(handle)) => handle.hwnd.get() as _,
-                    Some(RawWindowHandle::Xlib(handle)) => handle.window as _,
-                    Some(RawWindowHandle::Wayland(handle)) => handle.surface.as_ptr(),
-                    _ => std::ptr::null_mut(),
-                },
-                // shared_texture_enabled: true as _,
-                ..Default::default()
-            }),
+            Some(&window_info),
             Some(&mut self.client_handler(
                 webview,
                 size.clone(),
@@ -97,6 +109,7 @@ impl Browsers {
             context.as_mut(),
         )
         .expect("Failed to create browser");
+        
         self.browsers.insert(
             webview,
             WebviewBrowser {

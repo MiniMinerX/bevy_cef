@@ -4,9 +4,17 @@ use cef::rc::{Rc, RcImpl};
 use cef::{ImplApp, ImplSchemeRegistrar, RenderProcessHandler, SchemeRegistrar, WrapApp};
 use cef_dll_sys::{_cef_app_t, cef_base_ref_counted_t};
 
-#[derive(Default)]
+//#[derive(Default)]
 pub struct RenderProcessAppBuilder {
     object: *mut RcImpl<_cef_app_t, Self>,
+}
+
+impl Default for RenderProcessAppBuilder {
+    fn default() -> Self {
+        Self {
+            object: std::ptr::null_mut(),
+        }
+    }
 }
 
 impl RenderProcessAppBuilder {
